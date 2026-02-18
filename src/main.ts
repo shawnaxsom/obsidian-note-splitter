@@ -35,6 +35,50 @@ export default class NoteSplitterPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	/**
+	 * Checks if a line should be skipped based on content patterns
+	 */
+	shouldSkipLine(line: string): boolean {
+		const trimmed = line.trim();
+
+		// Skip empty lines
+		if (trimmed.length === 0) {
+			return true;
+		}
+
+		// Skip "All day" lines
+		if (trimmed.toLowerCase() === 'all day') {
+			return true;
+		}
+
+		// Skip lines containing "headset" (case-insensitive)
+		if (trimmed.toLowerCase().includes('headset')) {
+			return true;
+		}
+
+		// Skip lines that are timespan patterns like "7 – 8:05am" or "9:00 - 10:30pm"
+		// Matches patterns: digit(s) optional:digit(s) optional(am/pm) separator digit(s) optional:digit(s) optional(am/pm)
+		const timespanPattern = /^\d{1,2}(:\d{2})?\s*(am|pm)?\s*[–\-]\s*\d{1,2}(:\d{2})?\s*(am|pm)?$/i;
+		if (timespanPattern.test(trimmed)) {
+			return true;
+		}
+
+		// Skip lines that are location patterns like "Phoenix, AZ" or "City Name, ST"
+		// Matches: word(s), space, 2 capital letters
+		const locationPattern = /^[\w\s]+,\s+[A-Z]{2}$/;
+		if (locationPattern.test(trimmed)) {
+			return true;
+		}
+
+		// Skip lines that contain URLs (http:// or https://)
+		const urlPattern = /https?:\/\//;
+		if (urlPattern.test(trimmed)) {
+			return true;
+		}
+
+		return false;
+	}
+
 	splitLinesToNotes(editor: Editor) {
 		// Get selected text
 		const selection = editor.getSelection();
@@ -49,7 +93,7 @@ export default class NoteSplitterPlugin extends Plugin {
 
 		const wikilinks = lines
 			.map(line => line.trim())
-			.filter(line => line.length > 0) // Skip empty lines
+			.filter(line => !this.shouldSkipLine(line)) // Skip unwanted lines
 			.map(line => {
 				// Sanitize the filename
 				let filename = sanitizeFilename(line, this.settings);
