@@ -1,0 +1,6 @@
+# Deployment configuration for Obsidian plugin
+# Copy this file to .deploy-config and update with your actual path
+
+# The Obsidian plugin folder where files should be copied
+# Example: /Users/YOUR_USERNAME/path/to/your/vault/.obsidian/plugins/note-splitter
+OBSIDIAN_PLUGIN_DIR=""
