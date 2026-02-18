@@ -15,7 +15,7 @@ export default class NoteSplitterPlugin extends Plugin {
 			id: 'split-lines-to-notes',
 			name: 'Split selected lines into linked notes',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.splitLinesToNotes(editor);
+				this.splitLinesToNotes(editor, view);
 			}
 		});
 
@@ -79,7 +79,7 @@ export default class NoteSplitterPlugin extends Plugin {
 		return false;
 	}
 
-	splitLinesToNotes(editor: Editor) {
+	splitLinesToNotes(editor: Editor, view: MarkdownView) {
 		// Get selected text
 		const selection = editor.getSelection();
 
@@ -87,6 +87,9 @@ export default class NoteSplitterPlugin extends Plugin {
 			new Notice('No text selected');
 			return;
 		}
+
+		// Get the current filename (without extension) to extract date if present
+		const currentFilename = view.file?.basename || '';
 
 		// Split into lines and process
 		const lines = selection.split('\n');
@@ -100,7 +103,7 @@ export default class NoteSplitterPlugin extends Plugin {
 
 				// Add date if enabled
 				if (this.settings.dateFormat !== 'none') {
-					filename = appendDateToFilename(filename, this.settings.dateFormat);
+					filename = appendDateToFilename(filename, this.settings.dateFormat, currentFilename);
 				}
 
 				// Create wikilink
