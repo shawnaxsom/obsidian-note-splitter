@@ -2,6 +2,8 @@
 
 An Obsidian plugin that transforms selected lines into wikilinks with sanitized, cross-platform filenames and date stamps.
 
+A primary use case is if copying a list of calendar events into a daily note where you would like to create linked notes for each event.
+
 ## Features
 
 - **Split Lines into Wikilinks**: Select multiple lines and convert them into `[[wikilink]]` format
