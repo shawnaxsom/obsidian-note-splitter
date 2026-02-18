@@ -3,6 +3,7 @@ import { NoteSplitterSettings, DEFAULT_SETTINGS } from './settings';
 import { NoteSplitterSettingTab } from './settingsTab';
 import { sanitizeFilename } from './filenameSanitizer';
 import { appendDateToFilename } from './dateFormatter';
+import { processOneOnOneLine } from './oneOnOneProcessor';
 
 export default class NoteSplitterPlugin extends Plugin {
 	settings: NoteSplitterSettings;
@@ -98,8 +99,11 @@ export default class NoteSplitterPlugin extends Plugin {
 			.map(line => line.trim())
 			.filter(line => !this.shouldSkipLine(line)) // Skip unwanted lines
 			.map(line => {
+				// Process one-on-one patterns first
+				let processedLine = processOneOnOneLine(line, this.settings.userName);
+
 				// Sanitize the filename
-				let filename = sanitizeFilename(line, this.settings);
+				let filename = sanitizeFilename(processedLine, this.settings);
 
 				// Add date if enabled
 				if (this.settings.dateFormat !== 'none') {

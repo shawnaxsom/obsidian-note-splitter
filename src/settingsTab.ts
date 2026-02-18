@@ -17,6 +17,17 @@ export class NoteSplitterSettingTab extends PluginSettingTab {
 		containerEl.createEl('h2', { text: 'Note Splitter Settings' });
 
 		new Setting(containerEl)
+			.setName('Your name')
+			.setDesc('Your name for detecting one-on-one meeting patterns (e.g., "Jacob / Shawn")')
+			.addText(text => text
+				.setPlaceholder('Shawn')
+				.setValue(this.plugin.settings.userName)
+				.onChange(async (value) => {
+					this.plugin.settings.userName = value || 'Shawn';
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName('Date format')
 			.setDesc('Format for the date appended to filenames')
 			.addDropdown(dropdown => dropdown
