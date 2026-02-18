@@ -4,6 +4,7 @@ import { NoteSplitterSettingTab } from './settingsTab';
 import { sanitizeFilename } from './filenameSanitizer';
 import { appendDateToFilename } from './dateFormatter';
 import { processOneOnOneLine } from './oneOnOneProcessor';
+import { combineEvents } from './eventCombiner';
 
 export default class NoteSplitterPlugin extends Plugin {
 	settings: NoteSplitterSettings;
@@ -120,13 +121,16 @@ export default class NoteSplitterPlugin extends Plugin {
 			return;
 		}
 
+		// Combine events for the same person and date
+		const combined = combineEvents(wikilinks);
+
 		// Join wikilinks with newlines
-		const result = wikilinks.join('\n');
+		const result = combined.join('\n');
 
 		// Replace the selection
 		editor.replaceSelection(result);
 
 		// Show success notice
-		new Notice(`Created ${wikilinks.length} note link${wikilinks.length === 1 ? '' : 's'}`);
+		new Notice(`Created ${combined.length} note link${combined.length === 1 ? '' : 's'}`);
 	}
 }
