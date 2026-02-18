@@ -3,6 +3,7 @@ interface ParsedEvent {
 	eventDescription: string;
 	date: string | null;
 	originalFilename: string;
+	originalIndex: number;
 }
 
 /**
@@ -10,7 +11,7 @@ interface ParsedEvent {
  * Expected format: "[Person] [Event Description] [Date]"
  * Example: "Jacob one-on-one 2026-02-18" -> {person: "Jacob", eventDescription: "one-on-one", date: "2026-02-18"}
  */
-function parseEventFilename(filename: string): ParsedEvent {
+function parseEventFilename(filename: string, index: number): ParsedEvent {
 	// Remove any wikilink brackets
 	const cleaned = filename.replace(/^\[\[/, '').replace(/\]\]$/, '').trim();
 
@@ -44,7 +45,8 @@ function parseEventFilename(filename: string): ParsedEvent {
 			person: personMatch[1],
 			eventDescription: personMatch[2],
 			date,
-			originalFilename: filename
+			originalFilename: filename,
+			originalIndex: index
 		};
 	}
 
@@ -53,23 +55,25 @@ function parseEventFilename(filename: string): ParsedEvent {
 		person: null,
 		eventDescription: withoutDate,
 		date,
-		originalFilename: filename
+		originalFilename: filename,
+		originalIndex: index
 	};
 }
 
 /**
  * Combines multiple events for the same person and date into a single wikilink.
+ * Preserves the original order of events - combined events appear at the position
+ * of the first occurrence.
  * Example:
- *   Input: ["[[Jacob one-on-one 2026-02-18]]", "[[Jacob Career Discussion 2026-02-18]]"]
- *   Output: ["[[Jacob one-on-one and Career Discussion 2026-02-18]]"]
+ *   Input: ["Event 1", "[[Jacob one-on-one 2026-02-18]]", "Event 2", "[[Jacob Career Discussion 2026-02-18]]", "Event 3"]
+ *   Output: ["Event 1", "[[Jacob one-on-one and Career Discussion 2026-02-18]]", "Event 2", "Event 3"]
  */
 export function combineEvents(wikilinks: string[]): string[] {
-	// Parse all wikilinks
-	const parsed = wikilinks.map(link => parseEventFilename(link));
+	// Parse all wikilinks with their original indices
+	const parsed = wikilinks.map((link, index) => parseEventFilename(link, index));
 
 	// Group by person + date (only for events with a detected person)
 	const groups = new Map<string, ParsedEvent[]>();
-	const nonGrouped: ParsedEvent[] = [];
 
 	for (const event of parsed) {
 		if (event.person && event.date) {
@@ -78,32 +82,50 @@ export function combineEvents(wikilinks: string[]): string[] {
 				groups.set(key, []);
 			}
 			groups.get(key)!.push(event);
-		} else {
-			// If no person or no date detected, don't group
-			nonGrouped.push(event);
 		}
 	}
 
-	// Combine events in each group
-	const result: string[] = [];
+	// Create a map to track which indices should be skipped (subsequent occurrences in groups)
+	const indicesToSkip = new Set<number>();
+
+	// Create a map from first occurrence index to combined event
+	const combinedEvents = new Map<number, string>();
 
 	for (const [key, events] of groups.entries()) {
-		if (events.length === 1) {
-			// Only one event for this person + date, keep as is
-			result.push(events[0].originalFilename);
-		} else {
-			// Multiple events for same person + date, combine them
+		if (events.length > 1) {
+			// Multiple events for same person + date
 			const person = events[0].person!;
 			const date = events[0].date!;
 			const eventDescriptions = events.map(e => e.eventDescription);
 			const combined = eventDescriptions.join(' and ');
-			result.push(`[[${person} ${combined} ${date}]]`);
+			const combinedWikilink = `[[${person} ${combined} ${date}]]`;
+
+			// Place combined event at the position of the first occurrence
+			combinedEvents.set(events[0].originalIndex, combinedWikilink);
+
+			// Mark subsequent occurrences to be skipped
+			for (let i = 1; i < events.length; i++) {
+				indicesToSkip.add(events[i].originalIndex);
+			}
 		}
 	}
 
-	// Add non-grouped events
-	for (const event of nonGrouped) {
-		result.push(event.originalFilename);
+	// Build result array preserving original order
+	const result: string[] = [];
+
+	for (let i = 0; i < parsed.length; i++) {
+		if (indicesToSkip.has(i)) {
+			// Skip subsequent occurrences of grouped events
+			continue;
+		}
+
+		if (combinedEvents.has(i)) {
+			// Use the combined event at this position
+			result.push(combinedEvents.get(i)!);
+		} else {
+			// Use the original event
+			result.push(parsed[i].originalFilename);
+		}
 	}
 
 	return result;
