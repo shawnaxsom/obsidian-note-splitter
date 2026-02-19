@@ -1,10 +1,10 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import NoteSplitterPlugin from './main';
+import AgendaLinkerPlugin from './main';
 
-export class NoteSplitterSettingTab extends PluginSettingTab {
-	plugin: NoteSplitterPlugin;
+export class AgendaLinkerSettingTab extends PluginSettingTab {
+	plugin: AgendaLinkerPlugin;
 
-	constructor(app: App, plugin: NoteSplitterPlugin) {
+	constructor(app: App, plugin: AgendaLinkerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -14,7 +14,7 @@ export class NoteSplitterSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'Note Splitter Settings' });
+		containerEl.createEl('h2', { text: 'Agenda Linker Settings' });
 
 		new Setting(containerEl)
 			.setName('Your name')

@@ -2,5 +2,5 @@
 # Copy this file to .deploy-config and update with your actual path
 
 # The Obsidian plugin folder where files should be copied
-# Example: /Users/YOUR_USERNAME/path/to/your/vault/.obsidian/plugins/note-splitter
+# Example: /Users/YOUR_USERNAME/path/to/your/vault/.obsidian/plugins/agenda-linker
 OBSIDIAN_PLUGIN_DIR=""

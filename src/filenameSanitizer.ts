@@ -1,10 +1,10 @@
-import { NoteSplitterSettings } from './settings';
+import { AgendaLinkerSettings } from './settings';
 
 /**
  * Sanitizes a string to be a valid cross-platform filename
  * Removes or replaces illegal characters: [\]#^|*"\\/:?<>|
  */
-export function sanitizeFilename(text: string, settings: NoteSplitterSettings): string {
+export function sanitizeFilename(text: string, settings: AgendaLinkerSettings): string {
 	// Trim whitespace
 	let sanitized = text.trim();
 

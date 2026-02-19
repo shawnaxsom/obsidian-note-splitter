@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deploy script for Obsidian Note Splitter plugin
+# Deploy script for Obsidian Agenda Linker plugin
 # Copies the built plugin files to your Obsidian vault
 
 set -e

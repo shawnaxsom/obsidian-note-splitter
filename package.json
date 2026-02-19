@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-note-splitter",
+	"name": "obsidian-agenda-linker",
 	"version": "1.0.0",
-	"description": "Obsidian plugin to split selected lines into wikilinks",
+	"description": "Obsidian plugin to convert agenda items into wikilinks",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

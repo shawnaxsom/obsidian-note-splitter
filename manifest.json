@@ -1,9 +1,9 @@
 {
-	"id": "note-splitter",
-	"name": "Note Splitter",
+	"id": "agenda-linker",
+	"name": "Agenda Linker",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Split selected lines into wikilinks with sanitized filenames and date stamps",
+	"description": "Convert agenda items into wikilinks with sanitized filenames and date stamps",
 	"author": "Shawn Axsom",
 	"authorUrl": "https://github.com/shawnaxsom",
 	"isDesktopOnly": false

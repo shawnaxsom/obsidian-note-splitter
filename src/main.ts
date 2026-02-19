@@ -1,13 +1,13 @@
 import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
-import { NoteSplitterSettings, DEFAULT_SETTINGS } from './settings';
-import { NoteSplitterSettingTab } from './settingsTab';
+import { AgendaLinkerSettings, DEFAULT_SETTINGS } from './settings';
+import { AgendaLinkerSettingTab } from './settingsTab';
 import { sanitizeFilename } from './filenameSanitizer';
 import { appendDateToFilename } from './dateFormatter';
 import { processOneOnOneLine } from './oneOnOneProcessor';
 import { combineEvents } from './eventCombiner';
 
-export default class NoteSplitterPlugin extends Plugin {
-	settings: NoteSplitterSettings;
+export default class AgendaLinkerPlugin extends Plugin {
+	settings: AgendaLinkerSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -22,7 +22,7 @@ export default class NoteSplitterPlugin extends Plugin {
 		});
 
 		// Add settings tab
-		this.addSettingTab(new NoteSplitterSettingTab(this.app, this));
+		this.addSettingTab(new AgendaLinkerSettingTab(this.app, this));
 	}
 
 	onunload() {
