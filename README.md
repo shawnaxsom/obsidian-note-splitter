@@ -9,8 +9,10 @@ A primary use case is if copying a list of calendar events into a daily note whe
 - **Split Lines into Wikilinks**: Select multiple lines and convert them into `[[wikilink]]` format
 - **Filename Sanitization**: Automatically removes illegal filesystem characters (`, `, `:`, `*`, `?`, `"`, `<`, `>`, `|`)
 - **Date Stamps**: Appends current date to each filename (configurable format)
+- **Smart Filtering**: Automatically filters out noise like timespans, locations, URLs, and lines preceded by filter keywords
+- **Configurable Filter Keywords**: Mark lines to skip by adding keywords like "headset" or "focus-time" - useful for filtering calendar focus blocks
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
-- **Configurable**: Customize date format, replacement character, and max filename length
+- **Configurable**: Customize date format, replacement character, max filename length, and filter keywords
 
 ## Usage
 
@@ -35,7 +37,39 @@ Task Three
 [[Task Three 2025-01-15]]
 ```
 
-Empty lines are automatically skipped.
+Empty lines and metadata (timespans, locations, URLs) are automatically skipped.
+
+### Filter Keywords
+
+The plugin can filter out lines that follow specific keywords, which is useful for calendar events you don't want to create notes for (like focus time blocks).
+
+**Example with Google Calendar focus time:**
+
+**Before:**
+```
+11am – 12pm
+Billing Frontend
+11 – 11:25am
+_headset_
+
+Lunch
+11:30am – 12pm
+UBB CPR Review
+2:30 – 2:55pm
+Sam / Shawn
+5 – 6:20pm
+headset
+Reliability Review
+```
+
+**After:**
+```
+[[Billing Frontend 2026-02-24]]
+[[UBB CPR Review 2026-02-24]]
+[[Sam one-on-one 2026-02-24]]
+```
+
+Lines containing "headset" (with or without markdown italics `_headset_`) are removed, along with the line immediately following them (or the line after a blank line). This is configurable in settings.
 
 ### Character Sanitization
 
@@ -77,9 +111,11 @@ Note:Test
 
 Access settings via Settings → Agenda Linker:
 
+- **Your Name**: Your name for detecting one-on-one meeting patterns (e.g., "Jacob / Shawn" becomes "Jacob one-on-one")
 - **Date Format**: Choose between `YYYY-MM-DD`, `YYYYMMDD`, or no date
 - **Replacement Character**: Character used to replace illegal filename characters (default: `-`)
 - **Maximum Filename Length**: Maximum length for filenames before date is added (default: 200)
+- **Filter Keywords**: Comma-separated list of keywords that mark lines to be filtered. When a keyword appears on a line, the following line (or line after a blank) will be filtered out. The keyword line itself is also removed. (default: `headset`)
 
 ## Development
 
@@ -94,16 +130,38 @@ npm run dev
 npm run build
 ```
 
+### Deployment
+
+To deploy the plugin to your Obsidian vault:
+
+1. Copy `.deploy-config.example` to `.deploy-config`:
+   ```bash
+   cp .deploy-config.example .deploy-config
+   ```
+
+2. Edit `.deploy-config` and set your plugin directory path:
+   ```bash
+   OBSIDIAN_PLUGIN_DIR="/path/to/vault/.obsidian/plugins/agenda-linker"
+   ```
+
+3. Build and deploy:
+   ```bash
+   npm run build && ./deploy.sh
+   ```
+
+The deployment script will:
+- Clean the plugin directory (keeping user settings in `data.json`)
+- Copy only the necessary files (`main.js`, `manifest.json`, and `styles.css` if present)
+- Verify the deployment was successful
+
 ## Testing
 
 To test the plugin during development:
 
-1. Build the plugin with `npm run dev` or `npm run build`
-2. Create a symbolic link from your vault's plugins folder to this repository:
-   ```bash
-   ln -s /path/to/obsidian-agenda-linker /path/to/vault/.obsidian/plugins/agenda-linker
-   ```
-3. Reload Obsidian and enable the plugin
+1. Configure your deployment as described above
+2. Build and deploy with `npm run build && ./deploy.sh`
+3. Reload Obsidian (Ctrl/Cmd + R)
+4. Enable the plugin in Settings → Community Plugins
 
 ### Test Cases
 

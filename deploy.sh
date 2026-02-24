@@ -9,6 +9,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Check if config file exists
@@ -38,22 +39,98 @@ if [ ! -f manifest.json ]; then
     exit 1
 fi
 
+# Verify main.js has content
+if [ ! -s main.js ]; then
+    echo -e "${RED}Error: main.js is empty. Build may have failed.${NC}"
+    exit 1
+fi
+
 # Create the destination directory if it doesn't exist
-echo -e "${YELLOW}Creating plugin directory if needed...${NC}"
+echo -e "${YELLOW}Preparing plugin directory...${NC}"
 mkdir -p "$OBSIDIAN_PLUGIN_DIR"
 
-# Copy files
-echo -e "${YELLOW}Copying files to $OBSIDIAN_PLUGIN_DIR${NC}"
-cp main.js "$OBSIDIAN_PLUGIN_DIR/"
-cp manifest.json "$OBSIDIAN_PLUGIN_DIR/"
+# Clean up any non-plugin files from the destination
+# Only keep main.js, manifest.json, styles.css, and data.json (user settings)
+echo -e "${YELLOW}Cleaning plugin directory (keeping user data)...${NC}"
+if [ -d "$OBSIDIAN_PLUGIN_DIR" ]; then
+    # Save data.json if it exists (contains user settings)
+    if [ -f "$OBSIDIAN_PLUGIN_DIR/data.json" ]; then
+        cp "$OBSIDIAN_PLUGIN_DIR/data.json" /tmp/obsidian-plugin-data.json.backup
+        echo -e "${BLUE}Backed up data.json${NC}"
+    fi
+
+    # Remove everything except data.json
+    find "$OBSIDIAN_PLUGIN_DIR" -mindepth 1 -maxdepth 1 ! -name 'data.json' -exec rm -rf {} +
+
+    # Restore data.json if it was backed up
+    if [ -f /tmp/obsidian-plugin-data.json.backup ]; then
+        mv /tmp/obsidian-plugin-data.json.backup "$OBSIDIAN_PLUGIN_DIR/data.json"
+        echo -e "${BLUE}Restored data.json${NC}"
+    fi
+fi
+
+# Array to track copied files
+COPIED_FILES=()
+
+# Copy main.js
+echo -e "${BLUE}Copying main.js...${NC}"
+cp -f main.js "$OBSIDIAN_PLUGIN_DIR/"
+if [ $? -eq 0 ]; then
+    COPIED_FILES+=("main.js")
+else
+    echo -e "${RED}Error: Failed to copy main.js${NC}"
+    exit 1
+fi
+
+# Copy manifest.json
+echo -e "${BLUE}Copying manifest.json...${NC}"
+cp -f manifest.json "$OBSIDIAN_PLUGIN_DIR/"
+if [ $? -eq 0 ]; then
+    COPIED_FILES+=("manifest.json")
+else
+    echo -e "${RED}Error: Failed to copy manifest.json${NC}"
+    exit 1
+fi
 
 # Copy styles.css if it exists
 if [ -f styles.css ]; then
-    cp styles.css "$OBSIDIAN_PLUGIN_DIR/"
-    echo -e "${GREEN}✓ Copied: main.js, manifest.json, styles.css${NC}"
-else
-    echo -e "${GREEN}✓ Copied: main.js, manifest.json${NC}"
+    echo -e "${BLUE}Copying styles.css...${NC}"
+    cp -f styles.css "$OBSIDIAN_PLUGIN_DIR/"
+    if [ $? -eq 0 ]; then
+        COPIED_FILES+=("styles.css")
+    fi
 fi
 
+# Copy any additional asset files if they exist
+for file in *.json; do
+    if [ "$file" != "manifest.json" ] && [ "$file" != "package.json" ] && [ "$file" != "package-lock.json" ] && [ "$file" != "tsconfig.json" ]; then
+        if [ -f "$file" ]; then
+            echo -e "${BLUE}Copying additional file: $file${NC}"
+            cp -f "$file" "$OBSIDIAN_PLUGIN_DIR/"
+            COPIED_FILES+=("$file")
+        fi
+    fi
+done
+
+# Verify files were copied successfully
+echo -e "${YELLOW}Verifying deployment...${NC}"
+for file in "${COPIED_FILES[@]}"; do
+    if [ -f "$OBSIDIAN_PLUGIN_DIR/$file" ]; then
+        echo -e "${GREEN}✓ $file${NC}"
+    else
+        echo -e "${RED}✗ $file (verification failed)${NC}"
+        exit 1
+    fi
+done
+
+echo ""
+echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Deployment complete!${NC}"
-echo "Plugin files have been copied to: $OBSIDIAN_PLUGIN_DIR"
+echo -e "${GREEN}========================================${NC}"
+echo "Copied ${#COPIED_FILES[@]} file(s) to:"
+echo "$OBSIDIAN_PLUGIN_DIR"
+echo ""
+echo -e "${YELLOW}Next steps:${NC}"
+echo "1. Reload Obsidian (Ctrl/Cmd + R)"
+echo "2. Enable the plugin in Settings → Community Plugins"
+echo "3. Check Settings → Agenda Linker to configure"

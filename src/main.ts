@@ -53,11 +53,6 @@ export default class AgendaLinkerPlugin extends Plugin {
 			return true;
 		}
 
-		// Skip lines containing "headset" (case-insensitive)
-		if (trimmed.toLowerCase().includes('headset')) {
-			return true;
-		}
-
 		// Skip lines that are timespan patterns like "7 – 8:05am" or "9:00 - 10:30pm"
 		// Matches patterns: digit(s) optional:digit(s) optional(am/pm) separator digit(s) optional:digit(s) optional(am/pm)
 		const timespanPattern = /^\d{1,2}(:\d{2})?\s*(am|pm)?\s*[–\-]\s*\d{1,2}(:\d{2})?\s*(am|pm)?$/i;
@@ -81,6 +76,69 @@ export default class AgendaLinkerPlugin extends Plugin {
 		return false;
 	}
 
+	/**
+	 * Checks if a line contains any filter keyword (with or without markdown formatting)
+	 */
+	containsFilterKeyword(line: string): boolean {
+		const trimmed = line.trim().toLowerCase();
+
+		// Get keywords from settings
+		const keywords = this.settings.filterKeywords
+			.split(',')
+			.map(k => k.trim().toLowerCase())
+			.filter(k => k.length > 0);
+
+		// Check if line contains any keyword (with or without underscores for markdown italics)
+		return keywords.some(keyword => {
+			// Remove markdown formatting (underscores) from the line for comparison
+			const lineWithoutFormatting = trimmed.replace(/_/g, '');
+			return lineWithoutFormatting.includes(keyword);
+		});
+	}
+
+	/**
+	 * Filters lines based on context, including lines that come after filter keywords
+	 */
+	filterLinesWithContext(lines: string[]): string[] {
+		const result: string[] = [];
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+
+			// Skip if line matches basic skip patterns
+			if (this.shouldSkipLine(line)) {
+				continue;
+			}
+
+			// Skip if line contains a filter keyword
+			if (this.containsFilterKeyword(line)) {
+				continue;
+			}
+
+			// Check if previous line (i-1) contains a filter keyword
+			// If so, skip this line
+			if (i > 0 && this.containsFilterKeyword(lines[i - 1])) {
+				continue;
+			}
+
+			// Check if line 2 positions back (i-2) contains a filter keyword
+			// AND the previous line (i-1) is empty/blank
+			// If so, skip this line (handles the blank line case)
+			if (i > 1) {
+				const prevLine = lines[i - 1].trim();
+				const twoLinesBack = lines[i - 2];
+				if (prevLine.length === 0 && this.containsFilterKeyword(twoLinesBack)) {
+					continue;
+				}
+			}
+
+			// Line passes all filters, include it
+			result.push(line);
+		}
+
+		return result;
+	}
+
 	splitLinesToNotes(editor: Editor, view: MarkdownView) {
 		// Get selected text
 		const selection = editor.getSelection();
@@ -93,12 +151,11 @@ export default class AgendaLinkerPlugin extends Plugin {
 		// Get the current filename (without extension) to extract date if present
 		const currentFilename = view.file?.basename || '';
 
-		// Split into lines and process
+		// Split into lines and filter with context
 		const lines = selection.split('\n');
+		const filteredLines = this.filterLinesWithContext(lines);
 
-		const wikilinks = lines
-			.map(line => line.trim())
-			.filter(line => !this.shouldSkipLine(line)) // Skip unwanted lines
+		const wikilinks = filteredLines
 			.map(line => {
 				// Process one-on-one patterns first
 				let processedLine = processOneOnOneLine(line, this.settings.userName);

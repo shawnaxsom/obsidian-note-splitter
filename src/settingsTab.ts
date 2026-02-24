@@ -66,5 +66,16 @@ export class AgendaLinkerSettingTab extends PluginSettingTab {
 					this.plugin.settings.maxFilenameLength = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Filter keywords')
+			.setDesc('Comma-separated list of keywords that mark lines to be filtered. When a keyword appears on a line, the following line (or line after a blank) will be filtered out. The keyword line itself is also removed.')
+			.addTextArea(text => text
+				.setPlaceholder('headset, focus-time, personal')
+				.setValue(this.plugin.settings.filterKeywords)
+				.onChange(async (value) => {
+					this.plugin.settings.filterKeywords = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 }
